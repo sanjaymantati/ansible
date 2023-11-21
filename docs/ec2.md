@@ -1,0 +1,1 @@
+https://galaxy.ansible.com/ui/repo/published/amazon/aws/?extIdCarryOver=true&sc_cid=701f2000001OH7YAAW
