@@ -1,5 +1,15 @@
 ## Launch EC2s and install nginx server.
 
+### Command
+* **--ask-become-pas** for providing password for sudo user to execute sudo commands or execute them with root user.
+* **--private-key** Private key through which ansible plays can connect with EC2s.
+
+```bash
+
+$ ansible-playbook ec2-with-loop.yaml --ask-become-pas --private-key=/home/sanjay/ansible/ansible-demo.pem
+
+```
+
 * Playbook : **playbooks/ec2-with-loop.yaml** 
 ### Create EC2 instance (Play)
 
@@ -39,7 +49,7 @@
     * Add Public IPs of instances in host group.(ansible-demo-host)
     * Reference: https://docs.ansible.com/ansible/2.8/modules/add_host_module.html
 
-### Run Tasks on EC2 Instance
+### Run Tasks on EC2 Instance (Play)
 1. Debug Information
     * Just log host variables.
     * Reference:
