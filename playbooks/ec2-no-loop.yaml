@@ -20,7 +20,7 @@
         region: "{{ region }}"
         vpc_subnet_id: "{{ subnet_id }}"
         security_group: "{{ security_group }}"
-        exact_count: 1
+        exact_count: 2
         state: started
         tags:
           Name: "{{ tag_name }}-0"
