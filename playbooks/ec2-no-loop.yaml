@@ -1,0 +1,91 @@
+- name: Create EC2 instance
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  vars:
+    instance_type: t2.nano
+    ami: ami-0fc5d935ebf8bc3bc
+    region: us-east-1
+    key_name: ansible-demo
+    security_group: ansible-automation-ec2
+    tag_name: ansible-demo-single
+    subnet_id: subnet-089559524c2b1b136
+  tasks:
+    - name: Launch EC2 Instance
+      # Launch new or start/terminate existing(Stopped EC2s). But make sure that there should be exact 2 instance should be running.
+      amazon.aws.ec2_instance:
+        key_name: "{{ key_name }}"
+        instance_type: "{{ instance_type }}"
+        image_id: "{{ ami }}"
+        region: "{{ region }}"
+        vpc_subnet_id: "{{ subnet_id }}"
+        security_group: "{{ security_group }}"
+        exact_count: 1
+        state: started
+        tags:
+          Name: "{{ tag_name }}-0"
+        wait: true
+      register: ec2_instances
+
+    - name: Wait till all instances are started.
+      # Wait till all instances started by the "Launch EC2 Instance" task are in started state.
+      amazon.aws.ec2_instance:
+        instance_ids: '{{ ec2_instances.instance_ids }}'
+        region: '{{ region }}'
+        state: started
+        wait: True
+      register: started_ec2_instances
+
+    - name: Store Instance IDs in a Variable
+      # Store instance ids of started instances.
+      set_fact:
+        instance_ids: "{{ started_ec2_instances.instance_ids}}"
+
+    - name: Final Instance IDs.
+      debug:
+        msg: "Instance IDs: {{ instance_ids }}"
+
+    - name: Get Started Instances info
+      # Get started instance infos. In our case we're looking for instance public IPs to access them in the next process.
+      ec2_instance_info:
+        instance_ids: '{{ instance_ids }}'
+      register: ec2_instance_info
+
+    - name: Store Public IPs in a Variable.
+      # Store public IPs of started instances.
+      set_fact:
+        public_ips: "{{ ec2_instance_info.instances | map(attribute='public_ip_address') | list }}"
+
+    - name: Final Public IPs
+      debug:
+        msg: "Public IPs: {{ public_ips }}"
+
+    - name: Add EC2 instance IP to Ansible hosts dynamically.
+      # Add all public IPs of instances in one group. (In our case its "ansible-demo-host")
+      add_host:
+        name: "{{ item }}"
+        groups: ansible-demo-host
+      loop: "{{ public_ips }}"
+
+- name: Run Tasks on EC2 Instance
+  hosts: ansible-demo-host
+  remote_user: ubuntu
+  gather_facts: yes
+
+  tasks:
+
+    - name: Debug Information
+      debug:
+        var: hostvars
+    - name: Update apt
+      # Update repositories.
+      apt:
+        update_cache: yes
+      become: yes
+
+    - name: Install nginx
+      # Install nginx in instances of "ansible-demo-host" group.
+      apt:
+        name: nginx
+        state: present
+      become: yes

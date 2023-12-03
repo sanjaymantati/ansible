@@ -1,0 +1,42 @@
+- name: EC2 Creation
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  vars:
+    instance_type: t2.micro
+    ami: ami-0230bd60aa48260c6
+    region: us-east-1
+    key_name: ansible-demo
+    security_group: ansible-automation
+    tag_name: ansible-demo
+    subnet_id: subnet-0f0e4725df558a912
+  tasks:
+    - name: Launch EC2 Instance
+      amazon.aws.ec2_instance:
+        key_name: "{{ key_name }}"
+        instance_type: "{{ instance_type }}"
+        region: "{{ region }}"
+        vpc_subnet_id: "{{ subnet_id }}"
+        security_group: "{{ security_group }}"
+        tags:
+          Name: "{{ tag_name }}"
+        wait: true
+
+    - name: Print Public IP Address
+      debug:
+        msg: "Instance IP address is {{ ec2_instance.instances[0] }} , ec2_instance_public_ip is {{ ec2_instance.instances[0].network_interfaces[0].association.public_ip }}"
+
+    - name: Start the feature instances
+      amazon.aws.ec2_instance:
+        instance_ids: '{{ ec2_instance.instances[0].instance_id }}'
+        region: '{{ region }}'
+        state: running
+        wait: True
+
+    - name: Display EC2 instance information
+      debug:
+        var: ec2_instance
+
+    - name: Set fact for later use
+      set_fact:
+        ec2_instance_public_ip: "{{ ec2_instance.instances[0].network_interfaces[0].association.public_ip }}"
